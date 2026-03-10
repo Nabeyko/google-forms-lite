@@ -32,16 +32,17 @@ Backend:
 
 ## Running the Project
 
-- Start the server
-cd server
-npm install
-npm run dev
+- Start the server:
+   ```bash
+   cd server
+   npm install
+   npm run dev
 
 - Start the client
-cd client
-npm install
-npm run dev
-
+   ```bash
+   cd client
+   npm install
+   npm run dev
 
 Client runs on: http://localhost:5173  
 GraphQL server runs on: http://localhost:4000
