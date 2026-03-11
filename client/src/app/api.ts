@@ -1,6 +1,7 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { graphqlRequest } from '../services/graphql';
-import type { Form, FormResponse, QuestionType } from '../types';
+import type { Form, FormResponse } from '../types';
+import type { QuestionType } from '../types/enums';
 
 type CreateFormData = {
   title: string;

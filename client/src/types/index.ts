@@ -1,4 +1,4 @@
-export type QuestionType = 'TEXT' | 'MULTIPLE_CHOICE' | 'CHECKBOX' | 'DATE';
+import { QuestionType } from './enums';
 
 export type Question = {
   id: string;

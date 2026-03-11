@@ -1,4 +1,4 @@
-import type { QuestionType } from '../types';
+import { QuestionType } from "../types/enums";
 
 export type DraftQuestion = {
   title: string;
@@ -30,80 +30,96 @@ export default function QuestionEditor({
   onRemoveOption,
 }: Props) {
   const showOptions =
-    question.type === 'MULTIPLE_CHOICE' || question.type === 'CHECKBOX';
+    question.type === QuestionType.MULTIPLE_CHOICE ||
+    question.type === QuestionType.CHECKBOX;
 
   return (
-    <div className="space-y-4 rounded-xl border border-gray-200 p-4">
+    <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between">
-        <h3 className="font-medium">Question {index + 1}</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
+          Question {index + 1}
+        </h3>
 
         {canRemove && (
           <button
             type="button"
             onClick={onRemove}
-            className="text-sm text-red-600 hover:underline"
+            className="text-sm font-medium text-red-500 hover:text-red-700 transition-colors"
           >
-            Remove
+            Remove Question
           </button>
         )}
       </div>
 
-      <div>
-        <label className="mb-2 block text-sm font-medium">Question Title</label>
-        <input
-          className="w-full rounded-lg border border-gray-300 bg-white p-3 outline-none focus:border-black"
-          value={question.title}
-          onChange={(e) => onTitleChange(e.target.value)}
-          placeholder="Enter question title"
-        />
-      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="sm:col-span-2">
+          <label className="mb-1.5 block text-xs font-bold uppercase text-gray-700">
+            Question Title
+          </label>
+          <input
+            className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 outline-none focus:border-black focus:bg-white transition-all"
+            value={question.title}
+            onChange={(e) => onTitleChange(e.target.value)}
+            placeholder="What do you want to ask?"
+          />
+        </div>
 
-      <div>
-        <label className="mb-2 block text-sm font-medium">Type</label>
-        <select
-          className="w-full appearance-none rounded-lg border border-gray-300 bg-white p-3 outline-none focus:border-black"
-          value={question.type}
-          onChange={(e) => onTypeChange(e.target.value as QuestionType)}
-        >
-          <option value="TEXT">Text</option>
-          <option value="DATE">Date</option>
-          <option value="MULTIPLE_CHOICE">Multiple Choice</option>
-          <option value="CHECKBOX">Checkbox</option>
-        </select>
+        <div>
+          <label className="mb-1.5 block text-xs font-bold uppercase text-gray-700">
+            Type
+          </label>
+          <select
+            className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 outline-none focus:border-black focus:bg-white transition-all cursor-pointer"
+            value={question.type}
+            onChange={(e) => onTypeChange(e.target.value as QuestionType)}
+          >
+            <option value={QuestionType.TEXT}>Text Answer</option>
+            <option value={QuestionType.DATE}>Date</option>
+            <option value={QuestionType.MULTIPLE_CHOICE}>
+              Multiple Choice
+            </option>
+            <option value={QuestionType.CHECKBOX}>Checkboxes</option>
+          </select>
+        </div>
       </div>
 
       {showOptions && (
-        <div className="space-y-3">
+        <div className="mt-4 space-y-3 rounded-lg bg-gray-50 p-4">
           <div className="flex items-center justify-between">
-            <label className="block text-sm font-medium">Options</label>
+            <label className="text-xs font-bold uppercase text-gray-700">
+              Options
+            </label>
 
             <button
               type="button"
               onClick={onAddOption}
-              className="rounded-lg border border-gray-300 px-3 py-1 text-sm hover:bg-gray-100"
+              className="text-xs font-bold text-blue-600 hover:text-blue-800 uppercase tracking-tight"
             >
-              Add Option
+              + Add Option
             </button>
           </div>
 
-          {question.options.map((option, optionIndex) => (
-            <div key={optionIndex} className="flex gap-2">
-              <input
-                className="flex-1 rounded-lg border border-gray-300 bg-white p-3 outline-none focus:border-black"
-                value={option}
-                onChange={(e) => onOptionChange(optionIndex, e.target.value)}
-                placeholder={`Option ${optionIndex + 1}`}
-              />
+          <div className="space-y-2">
+            {question.options.map((option, optionIndex) => (
+              <div key={optionIndex} className="flex gap-2">
+                <input
+                  className="flex-1 rounded-lg border border-gray-300 bg-white p-2.5 text-sm outline-none focus:border-black"
+                  value={option}
+                  onChange={(e) => onOptionChange(optionIndex, e.target.value)}
+                  placeholder={`Option ${optionIndex + 1}`}
+                />
 
-              <button
-                type="button"
-                onClick={() => onRemoveOption(optionIndex)}
-                className="rounded-lg border border-red-300 px-3 text-red-600 hover:bg-red-50"
-              >
-                X
-              </button>
-            </div>
-          ))}
+                <button
+                  type="button"
+                  onClick={() => onRemoveOption(optionIndex)}
+                  className="flex items-center justify-center rounded-lg border border-transparent px-3 text-gray-400 hover:text-red-600 transition-colors"
+                  title="Remove option"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -1,19 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useCreateFormMutation } from "../app/api";
 import QuestionEditor, {
   type DraftQuestion,
 } from "../components/QuestionEditor";
-import type { QuestionType } from "../types";
-
-const createEmptyQuestion = (): DraftQuestion => ({
-  title: "",
-  type: "TEXT",
-  options: [],
-});
+import { QuestionType } from "../types/enums";
+import { cleanQuestions, createEmptyQuestion } from "../utils/formHelpers";
 
 export default function NewFormPage() {
-  const navigate = useNavigate();
   const [createForm, { isLoading, error }] = useCreateFormMutation();
 
   const [title, setTitle] = useState("");
@@ -22,30 +16,31 @@ export default function NewFormPage() {
   const [questions, setQuestions] = useState<DraftQuestion[]>([
     createEmptyQuestion(),
   ]);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const updateQuestionTitle = (index: number, value: string) => {
     setQuestions((prev) =>
-      prev.map((question, i) =>
-        i === index ? { ...question, title: value } : question,
-      ),
+      prev.map((q, i) => (i === index ? { ...q, title: value } : q)),
     );
   };
 
   const updateQuestionType = (index: number, type: QuestionType) => {
     setQuestions((prev) =>
-      prev.map((question, i) =>
+      prev.map((q, i) =>
         i === index
           ? {
-              ...question,
+              ...q,
               type,
-              options:
-                type === "MULTIPLE_CHOICE" || type === "CHECKBOX"
-                  ? question.options.length
-                    ? question.options
-                    : [""]
-                  : [],
+              options: [
+                QuestionType.MULTIPLE_CHOICE,
+                QuestionType.CHECKBOX,
+              ].includes(type)
+                ? q.options.length
+                  ? q.options
+                  : [""]
+                : [],
             }
-          : question,
+          : q,
       ),
     );
   };
@@ -60,42 +55,33 @@ export default function NewFormPage() {
 
   const addOption = (questionIndex: number) => {
     setQuestions((prev) =>
-      prev.map((question, i) =>
-        i === questionIndex
-          ? { ...question, options: [...question.options, ""] }
-          : question,
+      prev.map((q, i) =>
+        i === questionIndex ? { ...q, options: [...q.options, ""] } : q,
       ),
     );
   };
 
-  const updateOption = (
-    questionIndex: number,
-    optionIndex: number,
-    value: string,
-  ) => {
+  const updateOption = (qIndex: number, optIndex: number, value: string) => {
     setQuestions((prev) =>
-      prev.map((question, i) =>
-        i === questionIndex
+      prev.map((q, i) =>
+        i === qIndex
           ? {
-              ...question,
-              options: question.options.map((option, j) =>
-                j === optionIndex ? value : option,
+              ...q,
+              options: q.options.map((opt, j) =>
+                j === optIndex ? value : opt,
               ),
             }
-          : question,
+          : q,
       ),
     );
   };
 
-  const removeOption = (questionIndex: number, optionIndex: number) => {
+  const removeOption = (qIndex: number, optIndex: number) => {
     setQuestions((prev) =>
-      prev.map((question, i) =>
-        i === questionIndex
-          ? {
-              ...question,
-              options: question.options.filter((_, j) => j !== optionIndex),
-            }
-          : question,
+      prev.map((q, i) =>
+        i === qIndex
+          ? { ...q, options: q.options.filter((_, j) => j !== optIndex) }
+          : q,
       ),
     );
   };
@@ -105,79 +91,74 @@ export default function NewFormPage() {
     setFormError("");
 
     if (!title.trim()) {
-      setFormError("Title is required.");
+      setFormError("Form title is required");
       return;
     }
 
-    const cleanQuestions = questions
-      .filter((question) => question.title.trim())
-      .map((question) => ({
-        title: question.title.trim(),
-        type: question.type,
-        options:
-          question.type === "MULTIPLE_CHOICE" || question.type === "CHECKBOX"
-            ? question.options.filter((option) => option.trim())
-            : [],
-      }));
+    const cleanedQuestions = cleanQuestions(questions);
 
     try {
       await createForm({
         title: title.trim(),
         description: description.trim(),
-        questions: cleanQuestions,
+        questions: cleanedQuestions,
       }).unwrap();
-
-      navigate("/");
-    } catch {
-      setFormError("Failed to create form. Please try again.");
+      setIsSubmitted(true);
+    } catch (err) {
+      console.error("Save error:", err);
     }
   };
 
+  if (isSubmitted) {
+    return (
+      <main className="min-h-screen bg-gray-50 p-6">
+        <div className="mx-auto max-w-2xl rounded-2xl bg-white p-8 shadow-sm">
+          <h1 className="text-2xl font-bold">Form published!</h1>
+          <p className="mt-2 text-gray-600">Your new form is live and ready to accept responses.</p>
+
+          <Link
+            to="/"
+            className="mt-4 inline-block rounded-lg bg-black px-4 py-2 text-white hover:opacity-90"
+          >
+            Back to forms
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-3xl">
-        <h1 className="mb-6 text-3xl font-bold">Create New Form</h1>
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-6 flex items-center justify-between">
+          <Link
+            to="/"
+            className="text-sm font-medium text-blue-600 hover:underline"
+          >
+            ← Back to Dashboard
+          </Link>
+          <h1 className="text-xl font-bold">Create New Form</h1>
+        </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-6 rounded-2xl bg-white p-6 shadow-sm"
-        >
-          <div>
-            <label className="mb-2 block text-sm font-medium">Title</label>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <input
-              className="w-full rounded-lg border border-gray-300 bg-white p-3 outline-none focus:border-black"
+              type="text"
+              placeholder="Untitled Form"
+              className="w-full text-3xl font-bold outline-none placeholder:text-gray-300"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter form title"
             />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Description
-            </label>
-            <textarea
-              className="w-full rounded-lg border border-gray-300 bg-white p-3 outline-none focus:border-black"
+            <input
+              type="text"
+              placeholder="Form description"
+              className="mt-4 w-full text-lg outline-none placeholder:text-gray-300 border-b border-transparent focus:border-gray-200 pb-1"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter form description"
-              rows={4}
             />
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Questions</h2>
-
-              <button
-                type="button"
-                onClick={addQuestion}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-100"
-              >
-                Add Question
-              </button>
-            </div>
-
             {questions.map((question, index) => (
               <QuestionEditor
                 key={index}
@@ -185,42 +166,41 @@ export default function NewFormPage() {
                 question={question}
                 canRemove={questions.length > 1}
                 onRemove={() => removeQuestion(index)}
-                onTitleChange={(value) => updateQuestionTitle(index, value)}
+                onTitleChange={(val) => updateQuestionTitle(index, val)}
                 onTypeChange={(type) => updateQuestionType(index, type)}
                 onAddOption={() => addOption(index)}
-                onOptionChange={(optionIndex, value) =>
-                  updateOption(index, optionIndex, value)
+                onOptionChange={(optIdx, val) =>
+                  updateOption(index, optIdx, val)
                 }
-                onRemoveOption={(optionIndex) =>
-                  removeOption(index, optionIndex)
-                }
+                onRemoveOption={(optIdx) => removeOption(index, optIdx)}
               />
             ))}
           </div>
 
-          {formError && <p className="text-sm text-red-600">{formError}</p>}
-
+          {formError && (
+            <p className="text-red-600 text-sm font-medium">{formError}</p>
+          )}
           {Boolean(error) && (
-            <p className="text-sm text-red-600">
-              Something went wrong while saving the form.
+            <p className="text-sm font-medium text-red-600">
+              Error saving form. Please ensure the server is running.
             </p>
           )}
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4 pt-4">
+            <button
+              type="button"
+              onClick={addQuestion}
+              className="rounded-lg border border-gray-300 bg-white px-6 py-2.5 font-medium hover:bg-gray-50 transition-colors"
+            >
+              + Add Question
+            </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="rounded-lg bg-black px-5 py-3 font-medium text-white disabled:opacity-50"
+              className="rounded-lg bg-black px-10 py-2.5 font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
-              {isLoading ? "Creating..." : "Create Form"}
+              {isLoading ? "Saving..." : "Publish Form"}
             </button>
-
-            <Link
-              to="/"
-              className="rounded-lg border border-gray-300 px-5 py-3 font-medium text-gray-700 hover:bg-gray-100"
-            >
-              Back
-            </Link>
           </div>
         </form>
       </div>

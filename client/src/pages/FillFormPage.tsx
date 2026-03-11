@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { useGetFormByIdQuery, useSubmitResponseMutation } from '../app/api';
-import QuestionRenderer from '../components/QuestionRenderer';
+import { useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { useGetFormByIdQuery, useSubmitResponseMutation } from "../app/api";
+import QuestionRenderer from "../components/QuestionRenderer";
 
 export default function FillFormPage() {
-  const { id = '' } = useParams();
+  const { id = "" } = useParams();
 
   const { data: form, isLoading, error } = useGetFormByIdQuery(id);
 
@@ -12,7 +12,7 @@ export default function FillFormPage() {
     useSubmitResponseMutation();
 
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
-  const [submitError, setSubmitError] = useState('');
+  const [submitError, setSubmitError] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleAnswerChange = (questionId: string, value: string[]) => {
@@ -24,7 +24,7 @@ export default function FillFormPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitError('');
+    setSubmitError("");
 
     if (!form) return;
 
@@ -36,7 +36,7 @@ export default function FillFormPage() {
       .filter((answer) => answer.value.length > 0);
 
     if (!answersPayload.length) {
-      setSubmitError('Please answer at least one question.');
+      setSubmitError("Please answer at least one question.");
       return;
     }
 
@@ -48,7 +48,7 @@ export default function FillFormPage() {
 
       setIsSubmitted(true);
     } catch {
-      setSubmitError('Failed to submit form. Please try again.');
+      setSubmitError("Failed to submit form. Please try again.");
     }
   };
 
@@ -80,7 +80,17 @@ export default function FillFormPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-6 flex items-center justify-between">
+          <Link
+            to="/"
+            className="text-sm font-medium text-blue-600 hover:underline"
+          >
+            ← Back to Dashboard
+          </Link>
+          <h1 className="text-xl font-bold">Fill Form</h1>
+        </div>
+
         <div className="mb-6 rounded-2xl bg-white p-6 shadow-sm">
           <h1 className="text-3xl font-bold">{form.title}</h1>
 
@@ -91,7 +101,7 @@ export default function FillFormPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-4 rounded-2xl bg-white p-6 shadow-sm"
+          className="space-y-6"
         >
           {form.questions.map((question) => (
             <QuestionRenderer
@@ -104,25 +114,16 @@ export default function FillFormPage() {
             />
           ))}
 
-          {submitError && (
-            <p className="text-sm text-red-600">{submitError}</p>
-          )}
+          {submitError && <p className="text-sm text-red-600">{submitError}</p>}
 
           <div className="flex items-center gap-3">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-lg bg-black px-5 py-3 font-medium text-white disabled:opacity-50"
+              className="rounded-lg bg-black px-10 py-2.5 font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
-              {isSubmitting ? 'Submitting...' : 'Submit'}
+              {isSubmitting ? "Submitting..." : "Submit"}
             </button>
-
-            <Link
-              to="/"
-              className="rounded-lg border border-gray-300 px-5 py-3 font-medium text-gray-700 hover:bg-gray-100"
-            >
-              Back
-            </Link>
           </div>
         </form>
       </div>
