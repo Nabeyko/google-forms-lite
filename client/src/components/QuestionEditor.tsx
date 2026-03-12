@@ -69,16 +69,15 @@ export default function QuestionEditor({
             Type
           </label>
           <select
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 outline-none focus:border-black focus:bg-white transition-all cursor-pointer"
+            className="w-full appearance-none rounded-lg border border-gray-300 bg-gray-50 p-3 outline-none focus:border-black focus:bg-white transition-all cursor-pointer"
             value={question.type}
             onChange={(e) => onTypeChange(e.target.value as QuestionType)}
           >
-            <option value={QuestionType.TEXT}>Text Answer</option>
-            <option value={QuestionType.DATE}>Date</option>
-            <option value={QuestionType.MULTIPLE_CHOICE}>
-              Multiple Choice
-            </option>
-            <option value={QuestionType.CHECKBOX}>Checkboxes</option>
+            {Object.values(QuestionType).map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -89,7 +88,6 @@ export default function QuestionEditor({
             <label className="text-xs font-bold uppercase text-gray-700">
               Options
             </label>
-
             <button
               type="button"
               onClick={onAddOption}

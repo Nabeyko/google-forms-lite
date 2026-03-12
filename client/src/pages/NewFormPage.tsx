@@ -8,7 +8,7 @@ import { QuestionType } from "../types/enums";
 import { cleanQuestions, createEmptyQuestion } from "../utils/formHelpers";
 
 export default function NewFormPage() {
-  const [createForm, { isLoading, error }] = useCreateFormMutation();
+  const [createForm, { isLoading }] = useCreateFormMutation();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -19,69 +19,87 @@ export default function NewFormPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const updateQuestionTitle = (index: number, value: string) => {
-    setQuestions((prev) =>
-      prev.map((q, i) => (i === index ? { ...q, title: value } : q)),
+    setQuestions((prevQuestions) =>
+      prevQuestions.map((question, qIndex) =>
+        qIndex === index ? { ...question, title: value } : question,
+      ),
     );
   };
 
   const updateQuestionType = (index: number, type: QuestionType) => {
-    setQuestions((prev) =>
-      prev.map((q, i) =>
-        i === index
+    setQuestions((prevQuestions) =>
+      prevQuestions.map((question, qIndex) =>
+        qIndex === index
           ? {
-              ...q,
+              ...question,
               type,
               options: [
                 QuestionType.MULTIPLE_CHOICE,
                 QuestionType.CHECKBOX,
               ].includes(type)
-                ? q.options.length
-                  ? q.options
+                ? question.options.length
+                  ? question.options
                   : [""]
                 : [],
             }
-          : q,
+          : question,
       ),
     );
   };
 
   const addQuestion = () => {
-    setQuestions((prev) => [...prev, createEmptyQuestion()]);
+    setQuestions((previousQuestions) => [
+      ...previousQuestions,
+      createEmptyQuestion(),
+    ]);
   };
 
   const removeQuestion = (index: number) => {
-    setQuestions((prev) => prev.filter((_, i) => i !== index));
+    setQuestions((previousQuestions) =>
+      previousQuestions.filter((_, questionIndex) => questionIndex !== index),
+    );
   };
 
   const addOption = (questionIndex: number) => {
-    setQuestions((prev) =>
-      prev.map((q, i) =>
-        i === questionIndex ? { ...q, options: [...q.options, ""] } : q,
+    setQuestions((previousQuestions) =>
+      previousQuestions.map((question, index) =>
+        index === questionIndex
+          ? { ...question, options: [...question.options, ""] }
+          : question,
       ),
     );
   };
 
-  const updateOption = (qIndex: number, optIndex: number, value: string) => {
-    setQuestions((prev) =>
-      prev.map((q, i) =>
-        i === qIndex
+  const updateOption = (
+    questionIndex: number,
+    optionIndex: number,
+    value: string,
+  ) => {
+    setQuestions((previousQuestions) =>
+      previousQuestions.map((question, index) =>
+        index === questionIndex
           ? {
-              ...q,
-              options: q.options.map((opt, j) =>
-                j === optIndex ? value : opt,
+              ...question,
+              options: question.options.map((option, jIndex) =>
+                jIndex === optionIndex ? value : option,
               ),
             }
-          : q,
+          : question,
       ),
     );
   };
 
-  const removeOption = (qIndex: number, optIndex: number) => {
-    setQuestions((prev) =>
-      prev.map((q, i) =>
-        i === qIndex
-          ? { ...q, options: q.options.filter((_, j) => j !== optIndex) }
-          : q,
+  const removeOption = (questionIndex: number, optionIndex: number) => {
+    setQuestions((previousQuestions) =>
+      previousQuestions.map((question, index) =>
+        index === questionIndex
+          ? {
+              ...question,
+              options: question.options.filter(
+                (_, jIndex) => jIndex !== optionIndex,
+              ),
+            }
+          : question,
       ),
     );
   };
@@ -95,6 +113,13 @@ export default function NewFormPage() {
       return;
     }
 
+    for (const question of questions) {
+      if (!question.title.trim()) {
+        setFormError("Each question must have a title");
+        return;
+      }
+    }
+
     const cleanedQuestions = cleanQuestions(questions);
 
     try {
@@ -104,8 +129,26 @@ export default function NewFormPage() {
         questions: cleanedQuestions,
       }).unwrap();
       setIsSubmitted(true);
-    } catch (err) {
-      console.error("Save error:", err);
+    } catch (caughtError: unknown) {
+      let message = "Something went wrong";
+
+      if (
+        typeof caughtError === "object" &&
+        caughtError !== null &&
+        "data" in caughtError
+      ) {
+        const errorWithData = caughtError as {
+          data?: {
+            errors?: Array<{ message?: string }>;
+          };
+        };
+
+        message = errorWithData.data?.errors?.[0]?.message || message;
+      } else if (caughtError instanceof Error) {
+        message = caughtError.message;
+      }
+
+      setFormError(message);
     }
   };
 
@@ -114,7 +157,9 @@ export default function NewFormPage() {
       <main className="min-h-screen bg-gray-50 p-6">
         <div className="mx-auto max-w-2xl rounded-2xl bg-white p-8 shadow-sm">
           <h1 className="text-2xl font-bold">Form published!</h1>
-          <p className="mt-2 text-gray-600">Your new form is live and ready to accept responses.</p>
+          <p className="mt-2 text-gray-600">
+            Your new form is live and ready to accept responses.
+          </p>
 
           <Link
             to="/"
@@ -179,11 +224,6 @@ export default function NewFormPage() {
 
           {formError && (
             <p className="text-red-600 text-sm font-medium">{formError}</p>
-          )}
-          {Boolean(error) && (
-            <p className="text-sm font-medium text-red-600">
-              Error saving form. Please ensure the server is running.
-            </p>
           )}
 
           <div className="flex items-center gap-4 pt-4">
